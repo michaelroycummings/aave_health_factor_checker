@@ -22,6 +22,8 @@ class AaveHealthFactor:
         self.lending_pool_abi_filename = 'lending_pool_abi.json'
         self.lending_pool_address = '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'
         self.infura_nodes = ['https://mainnet.infura.io/v3', 'wss://mainnet.infura.io/ws/v3']
+        ## Constants
+        self.max_sol_hex = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
 
 
     def connect(self, infura_id: str = None):
@@ -54,9 +56,7 @@ class AaveHealthFactor:
         return abi
 
 
-    def get_health_factor_at_block(self, borrower_address: str, block_number: Union[int, None]):
-        if block_number is None:
-            block_number = 'latest'
+    def get_health_factor_at_block(self, borrower_address: str, block_number: int):
         # For the latest value, you can also use self.lending_pool_contract.functions.getUserAccountData(borrower_address).call()
         (
             totalCollateralETH, totalDebtETH, availableBorrowsETH,
@@ -110,7 +110,8 @@ class AaveHealthFactor:
                 break
             response = input('Please enter a block number, or press enter to return the health factor of the latest block. \n')
             if response == '':
-                break  # block number is still None
+                block_number = Web3.eth.get_block('latest')
+                break
             try:
                 block_number = int(response)
                 break
@@ -131,10 +132,10 @@ class AaveHealthFactor:
             return
 
         ## Return Health Factor to User
-        if Web3.toHex(health_factor) == '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff':
+        if Web3.toHex(health_factor) == self.max_sol_hex:
             print(f'The address "{borrower_address}" has no outstanding borrow position on Aave.\n')
         else:
-            print(f'Health factor is "{health_factor}" for address "{borrower_address}".\n')
+            print(f'Health factor is {health_factor}: \n - for address {borrower_address} \n - at block {block_number}')
         if self.exe:
             input('Press enter to exit the program.')
         return health_factor
